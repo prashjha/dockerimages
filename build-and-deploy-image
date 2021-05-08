@@ -1,0 +1,23 @@
+#!/bin/bash
+
+image_name=$1
+docker_user=${DOCKER_USER}
+docker_password=${DOCKER_PASS}
+branch=${CIRCLE_BRANCH}
+revision=${CIRCLE_SHA1}
+image_tag="latest"
+
+./check-if-changed ${image_name}
+retVal=$?
+if [ $retVal == 0 ]; then
+  echo "Building ${image_name}"
+  docker build --build-arg TAG=${image_tag} -t ${image_name} ${image_name}
+
+  docker login --username ${docker_user} --password ${docker_password}
+  echo "Deploying image with tag: ${image_tag}"
+  docker tag ${image_name} prashjha/${image_name}:${image_tag}
+  docker push prashjha/${image_name}:${image_tag}
+else
+  echo "No changes for image ${image_name}"
+  exit 0
+fi
