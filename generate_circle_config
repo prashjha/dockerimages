@@ -8,7 +8,7 @@ echo "version: 2.1
 executors:
   compiler:
     docker:
-      - image: docker:17.06.0-ce-git
+      - image: docker:17.09.0-ce
     working_directory: ~/repo
 
 jobs:" >> ${config_file}
@@ -20,6 +20,9 @@ for file in ./* ; do
     executor: compiler
     steps:
       - checkout
+      - setup_remote_docker:
+          reusable: true
+          exclusive: true
       - run:
           name: Install bash
           command: apk add --no-cache bash
