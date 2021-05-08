@@ -49,7 +49,7 @@ for file in ./* ; do
   if [[ -d "$file" ]]; then
     directory_name=${file:2}
     first_line=$(head -n 2 ${directory_name}/Dockerfile)
-    if [[ ${first_line} == *"ataber"* ]]; then
+    if [[ ${first_line} == *"prashjha"* ]]; then
       dependent_image=${first_line:27}
 
       echo "      - ${directory_name}:
