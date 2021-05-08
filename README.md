@@ -1,6 +1,6 @@
 # Repository to build commonly used docker images 
 
-[![CircleCI](https://circleci.com/gh/prashjha/dockerfiles.svg?style=shield)](https://circleci.com/gh/prashjha/dockerfiles)
+[![CircleCI](https://circleci.com/gh/prashjha/dockerimages.svg?style=shield)](https://circleci.com/gh/prashjha/dockerimages)
 
 This repository is based on excellent automation of docker image creation in this repository: https://github.com/ataber/docker_images
 
