@@ -96,6 +96,4 @@ workflows:
   build-images:
     jobs:
       - angio-base-bionic
-      - angio-base-focal
       - peridem-base-bionic
-      - peridem-base-focal
