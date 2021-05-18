@@ -16,13 +16,13 @@ FROM prashjha/peridem-base-bionic
 LABEL maintainer="Prashant K. Jha <pjha.sci@gmail.com>"
 LABEL description="Docker image for clion remote development"
 
-RUN apt-get update --fix-missing \
-&&  apt-get upgrade -y --force-yes \
-&&  DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes \
-    openssh-server rsync gcc-multilib libstdc++-8-dev \
-&&  rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* \
-&&  apt-get autoremove -y \
-&&  apt-get autoclean -y 
+# RUN apt-get update --fix-missing \
+# &&  apt-get upgrade -y --force-yes \
+# &&  DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes \
+#     openssh-server rsync gcc-multilib libstdc++-8-dev \
+# &&  rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* \
+# &&  apt-get autoremove -y \
+# &&  apt-get autoclean -y 
 
 RUN ( \
     echo 'LogLevel DEBUG2'; \

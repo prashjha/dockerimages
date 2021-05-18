@@ -33,12 +33,19 @@ RUN rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* && \
 # -----------------------
 # cmake
 # -----------------------
-RUN apt-get update --fix-missing && \
-    apt-get install -y cmake 
+ARG CMAKE_MAJOR_VERSION=3.20
+ARG CMAKE_MINOR_VERSION=2
+ARG CMAKE_VERSION=$CMAKE_MAJOR_VERSION.$CMAKE_MINOR_VERSION
 
-RUN rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* && \
-    apt-get autoremove -y && \ 
-    apt-get autoclean -y 
+RUN cd /tmp && \
+    wget https://cmake.org/files/v$CMAKE_MAJOR_VERSION/cmake-$CMAKE_VERSION.tar.gz && \
+    tar xf cmake-$CMAKE_VERSION.tar.gz && \
+    cd cmake-$CMAKE_VERSION && \
+    ./bootstrap && \
+    make -j $(cat /proc/cpuinfo | grep processor | wc -l) && \
+    make install && \
+    cd .. && \
+    rm -rf cmake*
 
 # -----------------------
 # PETSc
