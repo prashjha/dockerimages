@@ -1,4 +1,4 @@
-FROM peridem-base-bionic
+FROM prashjha/peridem-base-bionic
 
 ## usage:
 ## 1. build command

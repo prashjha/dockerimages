@@ -1,4 +1,4 @@
-FROM angio-base-bionic
+FROM prashjha/angio-base-bionic
 
 ## usage:
 ## 1. build command
