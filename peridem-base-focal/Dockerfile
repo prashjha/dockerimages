@@ -2,7 +2,7 @@ FROM ubuntu:focal
 
 # Set metadata
 LABEL maintainer="Prashant K. Jha <pjha.sci@gmail.com>"
-LABEL description="Ubuntu 20.04 (focal) with HPX for PeriDEM tests"
+LABEL description="Ubuntu 20.04 (focal) with HPX and VTK for PeriDEM tests"
 
 # install essentials
 RUN apt-get update --fix-missing && \
@@ -71,7 +71,51 @@ RUN cd /tmp && \
     ../hpx-${HPX_VERSION} && \
     make -j $(cat /proc/cpuinfo | grep processor | wc -l) VERBOSE=1 && \
     make install && \
-    cd .. && rm -rf hpx-$HPX_VERSION && rm -rf hpx_build
+    cd .. && \
+    rm -rf hpx-${HPX_VERSION} && \
+    rm -rf hpx_build
 
-ENV HPX_DIR $HPX_INSTALL_PATH
+ENV HPX_DIR ${HPX_INSTALL_PATH}
 
+# -----------------------
+# VTK
+# -----------------------
+ENV VTK_MAJOR_VERSION=9
+ENV VTK_MINOR_VERSION=2
+ENV VTK_PATCH_VERSION=5
+ENV VTK_VERSION=$VTK_MAJOR_VERSION.$VTK_MINOR_VERSION.$VTK_PATCH_VERSION
+
+ENV VTK_INSTALL_PATH /usr/local
+
+RUN cd /tmp && \
+    git clone --recursive https://gitlab.kitware.com/vtk/vtk vtk-${VTK_VERSION} && \
+    cd vtk-${VTK_VERSION} && \
+    git checkout v${VTK_VERSION} && \
+    cd .. && \
+    mkdir -p vtk_build && \
+    cd vtk_build && \
+    cmake -D CMAKE_BUILD_TYPE:STRING=Release \
+    -D CMAKE_INSTALL_PREFIX:STRING=${VTK_INSTALL_PATH} \
+    -D VTK_Group_MPI:BOOL=ON \
+    -D BUILD_EXAMPLES=OFF \
+    -D BUILD_SHARED_LIBS=ON \
+    -D BUILD_TESTING=OFF \
+    -D VTK_USE_SYSTEM_EXPAT=ON \
+    -D VTK_USE_SYSTEM_HDF5=ON \
+    -D VTK_USE_SYSTEM_JPEG=ON \
+    -D VTK_USE_SYSTEM_LIBXML2=ON \
+    -D VTK_USE_SYSTEM_NETCDF=ON \
+    -D VTK_USE_SYSTEM_PNG=ON \
+    -D VTK_USE_SYSTEM_TIFF=ON \
+    -D VTK_USE_SYSTEM_ZLIB=ON \
+    -D VTK_REQUIRED_OBJCXX_FLAGS='' \
+    -D VTK_QT_VERSION:STRING=5 \
+    -D VTK_Group_Qt=ON \
+    ../vtk-${VTK_VERSION} && \
+    make -j $(cat /proc/cpuinfo | grep processor | wc -l) VERBOSE=1 && \
+    make install && \
+    cd .. && \
+    rm -rf vtk-${VTK_VERSION} && \
+    rm -rf vtk_build
+
+ENV VTK_DIR ${VTK_INSTALL_PATH}
