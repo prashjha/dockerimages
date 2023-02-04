@@ -22,13 +22,18 @@ RUN apt-get update --fix-missing && \
     libopenmpi-dev openmpi-bin \
     libblas-dev liblapack-dev libmpfr-dev libgmp-dev \
     libhwloc-dev libjemalloc-dev libboost-all-dev libyaml-cpp-dev \
-    libvtk7-dev libgmsh-dev gmsh libflann-dev 
+    libgmsh-dev gmsh libflann-dev \
+    gcc-10 g++-10 libtbb-dev && \
+    update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 100 && \
+    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 100 
 
 RUN pip3 install numpy pyvista pandas
 
 RUN rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* && \
     apt-get autoremove -y && \ 
     apt-get autoclean -y 
+
+RUN gcc -v 
 
 # -----------------------
 # cmake
@@ -51,7 +56,7 @@ ENV HPX_VERSION=$HPX_MAJOR_VERSION.$HPX_MINOR_VERSION.$HPX_PATCH_VERSION
 ENV HPX_INSTALL_PATH /usr/local
 
 RUN cd /tmp && \
-    wget https://github.com/STEllAR-GROUP/hpx/archive/${HPX_VERSION}.tar.gz && \
+    wget https://github.com/STEllAR-GROUP/hpx/archive/refs/tags/${HPX_VERSION}.tar.gz && \
     mkdir -p hpx-${HPX_VERSION} && \
     tar -zxf ${HPX_VERSION}.tar.gz -C hpx-${HPX_VERSION} --strip-components=1 && \
     rm -f ${HPX_VERSION}.tar.gz && \
