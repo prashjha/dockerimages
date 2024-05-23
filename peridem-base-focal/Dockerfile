@@ -2,7 +2,7 @@ FROM ubuntu:focal
 
 # Set metadata
 LABEL maintainer="Prashant K. Jha <pjha.sci@gmail.com>"
-LABEL description="Ubuntu 20.04 (focal) with VTK (9.2.5) and HPX (1.8.1) for PeriDEM tests"
+LABEL description="Ubuntu 20.04 (focal) with VTK (9.2.5) for PeriDEM tests"
 
 # install essentials
 RUN apt-get update --fix-missing && \
@@ -28,18 +28,21 @@ RUN apt-get update --fix-missing && \
     update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 100 && \
     update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 100 
 
+RUN echo "Display gcc version" && gcc -v 
+
+# python packages
 RUN pip3 install numpy pyvista pandas
 
+# clean up
 RUN rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* && \
     apt-get autoremove -y && \
     apt-get autoclean -y 
 
-RUN gcc -v 
-
 # create symlink for metis
-RUN ln -sf /usr/lib/x86_64-linux-gnu/libmetis.so /usr/lib/libmetis.so
-RUN ls /usr/include/metis*
-RUN ls /usr/lib/libmetis*
+RUN ln -sf /usr/lib/x86_64-linux-gnu/libmetis.so /usr/lib/libmetis.so && \
+    echo "Display metis header and lib files" && \
+    ls /usr/include/metis* && \
+    ls /usr/lib/libmetis*
 
 # -----------------------
 # cmake
@@ -52,47 +55,53 @@ RUN apt-get purge --auto-remove cmake && \
 
 RUN cmake --version 
 
+# fix public key issue with kitware repo following https://askubuntu.com/a/1484178
+RUN gpg --keyserver keyserver.ubuntu.com --recv-keys 1A127079A92F09ED && \
+    gpg --export --armor 1A127079A92F09ED | apt-key add - && \
+    apt-get update 
+
+# clean up
 RUN rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* && \
     apt-get autoremove -y && \
     apt-get autoclean -y 
 
-# -----------------------
-# HPX
-# -----------------------
-ENV HPX_MAJOR_VERSION=1
-ENV HPX_MINOR_VERSION=8
-ENV HPX_PATCH_VERSION=1
-ENV HPX_VERSION=$HPX_MAJOR_VERSION.$HPX_MINOR_VERSION.$HPX_PATCH_VERSION
+# # -----------------------
+# # HPX
+# # -----------------------
+# ENV HPX_MAJOR_VERSION=1
+# ENV HPX_MINOR_VERSION=8
+# ENV HPX_PATCH_VERSION=1
+# ENV HPX_VERSION=$HPX_MAJOR_VERSION.$HPX_MINOR_VERSION.$HPX_PATCH_VERSION
 
-ENV HPX_INSTALL_PATH /usr/local
+# ENV HPX_INSTALL_PATH /usr/local
 
-RUN cd /tmp && \
-    wget https://github.com/STEllAR-GROUP/hpx/archive/refs/tags/${HPX_VERSION}.tar.gz && \
-    mkdir -p hpx-${HPX_VERSION} && \
-    tar -zxf ${HPX_VERSION}.tar.gz -C hpx-${HPX_VERSION} --strip-components=1 && \
-    rm -f ${HPX_VERSION}.tar.gz && \
-    mkdir -p hpx_build && \
-    cd hpx_build && \
-    cmake \
-    -D CMAKE_BUILD_TYPE:STRING=Release \
-    -D CMAKE_INSTALL_PREFIX:STRING=${HPX_INSTALL_PATH} \
-    -D CMAKE_CXX_COMPILER=g++ \
-    -D CMAKE_C_COMPILER=gcc \
-    -D CMAKE_EXPORT_COMPILE_COMMANDS=ON \
-    -D HPX_WITH_THREAD_IDLE_RATES=ON \
-    -D HPX_WITH_DISABLED_SIGNAL_EXCEPTION_HANDLERS=ON \
-    -D HPX_WITH_MALLOC=system \
-    -D HPX_WITH_EXAMPLES=OFF \
-    -D HPX_WITH_TESTS=OFF \
-    -D HPX_WITH_NETWORKING=OFF \
-    ../hpx-${HPX_VERSION} && \
-    make -j $(cat /proc/cpuinfo | grep processor | wc -l) VERBOSE=1 && \
-    make install && \
-    cd .. && \
-    rm -rf hpx-${HPX_VERSION} && \
-    rm -rf hpx_build
+# RUN cd /tmp && \
+#     wget https://github.com/STEllAR-GROUP/hpx/archive/refs/tags/${HPX_VERSION}.tar.gz && \
+#     mkdir -p hpx-${HPX_VERSION} && \
+#     tar -zxf ${HPX_VERSION}.tar.gz -C hpx-${HPX_VERSION} --strip-components=1 && \
+#     rm -f ${HPX_VERSION}.tar.gz && \
+#     mkdir -p hpx_build && \
+#     cd hpx_build && \
+#     cmake \
+#     -D CMAKE_BUILD_TYPE:STRING=Release \
+#     -D CMAKE_INSTALL_PREFIX:STRING=${HPX_INSTALL_PATH} \
+#     -D CMAKE_CXX_COMPILER=g++ \
+#     -D CMAKE_C_COMPILER=gcc \
+#     -D CMAKE_EXPORT_COMPILE_COMMANDS=ON \
+#     -D HPX_WITH_THREAD_IDLE_RATES=ON \
+#     -D HPX_WITH_DISABLED_SIGNAL_EXCEPTION_HANDLERS=ON \
+#     -D HPX_WITH_MALLOC=system \
+#     -D HPX_WITH_EXAMPLES=OFF \
+#     -D HPX_WITH_TESTS=OFF \
+#     -D HPX_WITH_NETWORKING=OFF \
+#     ../hpx-${HPX_VERSION} && \
+#     make -j $(cat /proc/cpuinfo | grep processor | wc -l) VERBOSE=1 && \
+#     make install && \
+#     cd .. && \
+#     rm -rf hpx-${HPX_VERSION} && \
+#     rm -rf hpx_build
 
-ENV HPX_DIR ${HPX_INSTALL_PATH}
+# ENV HPX_DIR ${HPX_INSTALL_PATH}
 
 # -----------------------
 # VTK
