@@ -23,6 +23,7 @@ RUN apt-get update --fix-missing && \
     libblas-dev liblapack-dev libmpfr-dev libgmp-dev \
     libhwloc-dev libjemalloc-dev libboost-all-dev libyaml-cpp-dev \
     libgmsh-dev gmsh libflann-dev \
+    libmetis-dev \
     gcc-10 g++-10 libtbb-dev libasio-dev libglvnd-dev  && \
     update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 100 && \
     update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 100 
