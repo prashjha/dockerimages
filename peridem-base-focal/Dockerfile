@@ -35,6 +35,11 @@ RUN rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* && \
 
 RUN gcc -v 
 
+# create symlink for metis
+RUN ln -sf /usr/lib/x86_64-linux-gnu/libmetis.so /usr/lib/libmetis.so
+RUN ls /usr/include/metis*
+RUN ls /usr/lib/libmetis*
+
 # -----------------------
 # cmake
 # -----------------------
