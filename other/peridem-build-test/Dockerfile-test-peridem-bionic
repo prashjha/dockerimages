@@ -16,11 +16,11 @@ LABEL description="Test peridem using docker"
 
 # -----------------------
 # setup user (for mpi tests)
+# username - user
+# password - password
+# add only if the user does not exist
 # -----------------------
-RUN useradd -m user \
-  && yes password | passwd user
-
-RUN usermod -s /bin/bash user
+RUN if id user >/dev/null 2>&1; then echo "User 'user' already exists"; else echo "User 'user' does not exist so creating user 'user'" && useradd -m user && yes password | passwd user && usermod -s /bin/bash user; fi
 
 # change user
 USER user

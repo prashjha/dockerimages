@@ -4,7 +4,26 @@ FROM ubuntu:focal
 LABEL maintainer="Prashant K. Jha <pjha.sci@gmail.com>"
 LABEL description="Ubuntu 20.04 (focal) with VTK (9.3.0) for PeriDEM tests"
 
-# install essentials
+## Command to build docker image (inside 'peridem-base-focal' directory)
+## docker build --build-arg TAG=latest -t peridem-base-focal .
+
+# -----------------------
+# setup user (may need during mpi tests)
+# username - user
+# password - password
+# -----------------------
+RUN useradd -m user \
+  && yes password | passwd user
+
+RUN usermod -s /bin/bash user
+
+## to change to 'user' in running tests with this docker, include following in the dockerfile
+## USER user
+## WORKDIR /home/user
+
+# -----------------------
+# essentials
+# -----------------------
 RUN apt-get update --fix-missing && \
     apt-get upgrade -y && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y \

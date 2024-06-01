@@ -18,11 +18,21 @@ FROM prashjha/peridem-base-bionic:latest
 LABEL maintainer="Prashant K. Jha <pjha.sci@gmail.com>"
 LABEL description="Docker image for clion remote development"
 
-# fix public key issue with kitware repo following https://askubuntu.com/a/1484178
-RUN gpg --keyserver keyserver.ubuntu.com --recv-keys 6AF7F09730B3F0A4 && \
-    gpg --export --armor 6AF7F09730B3F0A4 | apt-key add - && \
-    apt-get update
+# -----------------------
+# setup user (for mpi tests)
+# username - user
+# password - password
+# add only if the user does not exist
+# -----------------------
+RUN if id user >/dev/null 2>&1; then echo "User 'user' already exists"; else echo "User 'user' does not exist so creating user 'user'" && useradd -m user && yes password | passwd user && usermod -s /bin/bash user; fi
 
+# change user
+USER user
+WORKDIR /home/user
+
+# -----------------------
+# clion essentials
+# -----------------------
 # RUN apt-get update --fix-missing \
 # &&  apt-get upgrade -y --force-yes \
 # &&  DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes \
@@ -31,6 +41,9 @@ RUN gpg --keyserver keyserver.ubuntu.com --recv-keys 6AF7F09730B3F0A4 && \
 # &&  apt-get autoremove -y \
 # &&  apt-get autoclean -y 
 
+# -----------------------
+# clion setup
+# -----------------------
 RUN ( \
     echo 'LogLevel DEBUG2'; \
     echo 'PermitRootLogin yes'; \
@@ -38,10 +51,5 @@ RUN ( \
     echo 'Subsystem sftp /usr/lib/openssh/sftp-server'; \
   ) > /etc/ssh/sshd_config_test_clion \
   && mkdir /run/sshd
-
-RUN useradd -m user \
-  && yes password | passwd user
-
-RUN usermod -s /bin/bash user
 
 CMD ["/usr/sbin/sshd", "-D", "-e", "-f", "/etc/ssh/sshd_config_test_clion"]
