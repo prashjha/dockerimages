@@ -2,7 +2,7 @@ FROM ubuntu:focal
 
 # Set metadata
 LABEL maintainer="Prashant K. Jha <pjha.sci@gmail.com>"
-LABEL description="Ubuntu 20.04 (focal) with VTK (9.2.5) for PeriDEM tests"
+LABEL description="Ubuntu 20.04 (focal) with VTK (9.3.0) for PeriDEM tests"
 
 # install essentials
 RUN apt-get update --fix-missing && \
@@ -10,7 +10,7 @@ RUN apt-get update --fix-missing && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y \
     git less wget curl lzip bzip2 unzip autoconf libtool pkg-config \
     rpm gcovr ruby-coveralls libproj-dev m4 \
-    software-properties-common ubuntu-dev-tools lsb-release \
+    software-properties-common ubuntu-dev-tools \
     gfortran make build-essential libssl-dev clang-format-10 clang-tidy \
     openssh-server rsync \
     doxygen doxygen-latex graphviz ghostscript \
@@ -24,11 +24,17 @@ RUN apt-get update --fix-missing && \
     libhwloc-dev libjemalloc-dev libboost-all-dev libyaml-cpp-dev \
     libgmsh-dev gmsh libflann-dev \
     libmetis-dev \
-    gcc-10 g++-10 libtbb-dev libasio-dev libglvnd-dev  && \
-    update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 100 && \
-    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 100 
+    libtbb-dev libasio-dev libglvnd-dev \
+    libjpeg-dev zlib1g-dev # for pillow python library \
+    libgl1-mesa-dev # for VTK 
 
-RUN echo "Display gcc version" && gcc -v 
+# packages specific to focal
+RUN apt-get install -y \
+    gcc-10 g++-10 && \
+    update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 100 && \
+    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 100 && \
+    echo "Display gcc version" && \
+    gcc -v
 
 # python packages
 RUN pip3 install numpy pyvista pandas
@@ -51,7 +57,7 @@ RUN apt-get purge --auto-remove cmake && \
     wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null && \
     apt-add-repository 'deb https://apt.kitware.com/ubuntu/ focal main' 
 
-# fix public key issue with kitware repo following https://askubuntu.com/a/1484178
+# fix public key issue with kitware repo following https://askubuntu.com/a/1484178 and https://askubuntu.com/a/865294
 RUN gpg --keyserver keyserver.ubuntu.com --recv-keys 1A127079A92F09ED && \
     gpg --export --armor 1A127079A92F09ED | apt-key add - && \
     apt-get update 
@@ -66,50 +72,12 @@ RUN rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* && \
     apt-get autoremove -y && \
     apt-get autoclean -y 
 
-# # -----------------------
-# # HPX
-# # -----------------------
-# ENV HPX_MAJOR_VERSION=1
-# ENV HPX_MINOR_VERSION=8
-# ENV HPX_PATCH_VERSION=1
-# ENV HPX_VERSION=$HPX_MAJOR_VERSION.$HPX_MINOR_VERSION.$HPX_PATCH_VERSION
-
-# ENV HPX_INSTALL_PATH /usr/local
-
-# RUN cd /tmp && \
-#     wget https://github.com/STEllAR-GROUP/hpx/archive/refs/tags/${HPX_VERSION}.tar.gz && \
-#     mkdir -p hpx-${HPX_VERSION} && \
-#     tar -zxf ${HPX_VERSION}.tar.gz -C hpx-${HPX_VERSION} --strip-components=1 && \
-#     rm -f ${HPX_VERSION}.tar.gz && \
-#     mkdir -p hpx_build && \
-#     cd hpx_build && \
-#     cmake \
-#     -D CMAKE_BUILD_TYPE:STRING=Release \
-#     -D CMAKE_INSTALL_PREFIX:STRING=${HPX_INSTALL_PATH} \
-#     -D CMAKE_CXX_COMPILER=g++ \
-#     -D CMAKE_C_COMPILER=gcc \
-#     -D CMAKE_EXPORT_COMPILE_COMMANDS=ON \
-#     -D HPX_WITH_THREAD_IDLE_RATES=ON \
-#     -D HPX_WITH_DISABLED_SIGNAL_EXCEPTION_HANDLERS=ON \
-#     -D HPX_WITH_MALLOC=system \
-#     -D HPX_WITH_EXAMPLES=OFF \
-#     -D HPX_WITH_TESTS=OFF \
-#     -D HPX_WITH_NETWORKING=OFF \
-#     ../hpx-${HPX_VERSION} && \
-#     make -j $(cat /proc/cpuinfo | grep processor | wc -l) VERBOSE=1 && \
-#     make install && \
-#     cd .. && \
-#     rm -rf hpx-${HPX_VERSION} && \
-#     rm -rf hpx_build
-
-# ENV HPX_DIR ${HPX_INSTALL_PATH}
-
 # -----------------------
 # VTK
 # -----------------------
 ENV VTK_MAJOR_VERSION=9
-ENV VTK_MINOR_VERSION=2
-ENV VTK_PATCH_VERSION=5
+ENV VTK_MINOR_VERSION=3
+ENV VTK_PATCH_VERSION=0
 ENV VTK_VERSION=$VTK_MAJOR_VERSION.$VTK_MINOR_VERSION.$VTK_PATCH_VERSION
 
 ENV VTK_INSTALL_PATH /usr/local
@@ -123,21 +91,22 @@ RUN cd /tmp && \
     cd vtk_build && \
     cmake -D CMAKE_BUILD_TYPE:STRING=Release \
     -D CMAKE_INSTALL_PREFIX:STRING=${VTK_INSTALL_PATH} \
-    -D VTK_Group_MPI:BOOL=ON \
-    -D BUILD_EXAMPLES=OFF \
     -D BUILD_SHARED_LIBS=ON \
     -D BUILD_TESTING=OFF \
-    -D VTK_USE_SYSTEM_EXPAT=ON \
-    -D VTK_USE_SYSTEM_HDF5=ON \
-    -D VTK_USE_SYSTEM_JPEG=ON \
-    -D VTK_USE_SYSTEM_LIBXML2=ON \
-    -D VTK_USE_SYSTEM_NETCDF=ON \
-    -D VTK_USE_SYSTEM_PNG=ON \
-    -D VTK_USE_SYSTEM_TIFF=ON \
-    -D VTK_USE_SYSTEM_ZLIB=ON \
     -D VTK_REQUIRED_OBJCXX_FLAGS='' \
-    -D VTK_QT_VERSION:STRING=5 \
-    -D VTK_Group_Qt=ON \
+    -D HDF5_BUILD_FRAMEWORKS=OFF \
+    -D VTK_BUILD_DOCUMENTATION=OFF \
+    -D VTK_BUILD_EXAMPLES=OFF \
+    -D VTK_BUILD_SCALED_SOA_ARRAYS=OFF \
+    -D VTK_BUILD_SPHINX_DOCUMENTATION=OFF \
+    -D VTK_GROUP_ENABLE_MPI=NO \
+    -D VTK_GROUP_ENABLE_Qt=DONT_WANT \
+    -D VTK_GROUP_ENABLE_Rendering=NO \
+    -D VTK_GROUP_ENABLE_Views=NO \
+    -D VTK_GROUP_ENABLE_Web=NO \
+    -D VTK_Group_MPI=ON \
+    -D VTK_USE_MPI=OFF \
+    -D VTK_WRAP_PYTHON=OFF \
     ../vtk-${VTK_VERSION} && \
     make -j $(cat /proc/cpuinfo | grep processor | wc -l) VERBOSE=1 && \
     make install && \
