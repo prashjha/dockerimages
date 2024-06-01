@@ -48,7 +48,7 @@ RUN ln -sf /usr/lib/x86_64-linux-gnu/libmetis.so /usr/lib/libmetis.so && \
 # -----------------------
 RUN apt-get purge --auto-remove cmake && \
     wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null && \
-    apt-add-repository 'deb https://apt.kitware.com/ubuntu/ $(lsb_release -cs) main' 
+    apt-add-repository 'deb https://apt.kitware.com/ubuntu/ bionic main' 
 
 # fix public key issue with kitware repo following https://askubuntu.com/a/1484178
 RUN gpg --keyserver keyserver.ubuntu.com --recv-keys 6AF7F09730B3F0A4 && \
