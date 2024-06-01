@@ -10,7 +10,7 @@ RUN apt-get update --fix-missing && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y \
     git less wget curl lzip bzip2 unzip autoconf libtool pkg-config \
     rpm gcovr ruby-coveralls libproj-dev m4 \
-    software-properties-common ubuntu-dev-tools \
+    software-properties-common ubuntu-dev-tools lsb-release \
     gfortran make build-essential libssl-dev clang-format-10 clang-tidy \
     openssh-server rsync \
     doxygen doxygen-latex graphviz ghostscript \
@@ -24,9 +24,7 @@ RUN apt-get update --fix-missing && \
     libhwloc-dev libjemalloc-dev libboost-all-dev libyaml-cpp-dev \
     libgmsh-dev gmsh libflann-dev \
     libmetis-dev \
-    gcc-10 g++-10 libtbb-dev libasio-dev libglvnd-dev  && \
-    update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 100 && \
-    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 100 
+    libtbb-dev libasio-dev libglvnd-dev 
 
 RUN echo "Display gcc version" && gcc -v 
 
@@ -49,16 +47,17 @@ RUN ln -sf /usr/lib/x86_64-linux-gnu/libmetis.so /usr/lib/libmetis.so && \
 # -----------------------
 RUN apt-get purge --auto-remove cmake && \
     wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null && \
-    apt-add-repository 'deb https://apt.kitware.com/ubuntu/ focal main' && \
-    apt-get update --fix-missing && \
+    apt-add-repository 'deb https://apt.kitware.com/ubuntu/ $(lsb_release -cs) main' 
+
+# fix public key issue with kitware repo following https://askubuntu.com/a/1484178
+RUN gpg --keyserver keyserver.ubuntu.com --recv-keys 6AF7F09730B3F0A4 && \
+    gpg --export --armor 6AF7F09730B3F0A4 | apt-key add - && \
+    apt-get update 
+
+RUN apt-get update --fix-missing && \
     apt-get install -y cmake
 
 RUN cmake --version 
-
-# fix public key issue with kitware repo following https://askubuntu.com/a/1484178
-RUN gpg --keyserver keyserver.ubuntu.com --recv-keys 1A127079A92F09ED && \
-    gpg --export --armor 1A127079A92F09ED | apt-key add - && \
-    apt-get update 
 
 # clean up
 RUN rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* && \

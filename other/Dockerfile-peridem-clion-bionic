@@ -19,8 +19,8 @@ LABEL maintainer="Prashant K. Jha <pjha.sci@gmail.com>"
 LABEL description="Docker image for clion remote development"
 
 # fix public key issue with kitware repo following https://askubuntu.com/a/1484178
-RUN gpg --keyserver keyserver.ubuntu.com --recv-keys 1A127079A92F09ED && \
-    gpg --export --armor 1A127079A92F09ED | apt-key add - && \
+RUN gpg --keyserver keyserver.ubuntu.com --recv-keys 6AF7F09730B3F0A4 && \
+    gpg --export --armor 6AF7F09730B3F0A4 | apt-key add - && \
     apt-get update
 
 # RUN apt-get update --fix-missing \
