@@ -15,6 +15,7 @@ RUN apt-get update --fix-missing && \
     openssh-server rsync \
     doxygen doxygen-latex graphviz ghostscript \
     lldb valgrind \
+    libjpeg-dev zlib1g-dev \
     python3-pip 
 
 RUN apt-get update --fix-missing && \
