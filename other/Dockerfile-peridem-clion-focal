@@ -1,16 +1,16 @@
-FROM prashjha/peridem-base-bionic:latest
+FROM prashjha/peridem-base-focal:latest
 
 ## usage:
 ## 1. pull latest docker image
-## docker pull prashjha/peridem-base-bionic:latest
+## docker pull prashjha/peridem-base-focal:latest
 ## 2. build command
-## docker build --no-cache -t peridem-clion-bionic -f Dockerfile-peridem-clion-bionic .
+## docker build --no-cache -t peridem-clion-focal -f Dockerfile-peridem-clion-focal .
 ## 3. run
-## docker run -d --cap-add sys_ptrace -p127.0.0.1:2222:22 --name peridem-clion-bionic-remote peridem-clion-bionic
+## docker run -d --cap-add sys_ptrace -p127.0.0.1:2222:22 --name peridem-clion-focal-remote peridem-clion-focal
 ## 4. set ssh
 ## ssh-keygen -f "$HOME/.ssh/known_hosts" -R "[localhost]:2222"
 ## 5. stop
-## docker stop peridem-clion-bionic-remote
+## docker stop peridem-clion-focal-remote
 ## 6. ssh credentials (test user)
 ## user@password 
 
@@ -21,15 +21,15 @@ LABEL description="Docker image for clion remote development"
 # fix public key issue with kitware repo following https://askubuntu.com/a/1484178
 RUN gpg --keyserver keyserver.ubuntu.com --recv-keys 1A127079A92F09ED && \
     gpg --export --armor 1A127079A92F09ED | apt-key add - && \
-    apt-get update
+    apt-get update 
 
-# RUN apt-get update --fix-missing \
-# &&  apt-get upgrade -y --force-yes \
-# &&  DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes \
-#     openssh-server rsync gcc-multilib libstdc++-8-dev \
-# &&  rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* \
-# &&  apt-get autoremove -y \
-# &&  apt-get autoclean -y 
+RUN apt-get update --fix-missing \
+&&  apt-get upgrade -y --force-yes \
+&&  DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes \
+    openssh-server rsync gcc-multilib libstdc++-8-dev \
+&&  rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* \
+&&  apt-get autoremove -y \
+&&  apt-get autoclean -y 
 
 RUN ( \
     echo 'LogLevel DEBUG2'; \
