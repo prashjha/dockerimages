@@ -19,8 +19,8 @@ commands:
         default: focal
     steps:
       - run:
-        name: greetings
-        command: |
+          name: greetings
+          command: |
             UBUNTU_NAME=<<parameters.ubuntu_name>> 
             echo "building using UBUNTU_NAME = ${UBUNTU_NAME}"
       - run: 
