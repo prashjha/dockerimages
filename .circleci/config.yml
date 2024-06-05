@@ -30,6 +30,7 @@ commands:
       - run:
           name: deploy
           command: |
+            UBUNTU_NAME=<<parameters.ubuntu_name>> 
             docker login --username ${DOCKER_USER} --password ${DOCKER_PASS}
             docker tag peridem-base-${UBUNTU_NAME} prashjha/peridem-base-${UBUNTU_NAME}:latest
             docker push prashjha/peridem-base-${UBUNTU_NAME}:latest
