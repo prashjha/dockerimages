@@ -6,9 +6,9 @@ ARG UBUNTU_NAME=
 FROM ubuntu:${UBUNTU_NAME}
 
 ## build command
-## UBUNTU_NAME=focal && docker build --network=host --no-cache  -t test-peridem-compilation-ubuntu-name-arg-${UBUNTU_NAME} --build-arg UBUNTU_NAME=${UBUNTU_NAME} -f Dockerfile-test-peridem-compilation-ubuntu-name-arg . 2>&1 | tee log-test-peridem-compilation-ubuntu-name-arg-${UBUNTU_NAME}.txt
+## UBUNTU_NAME=focal && docker build --network=host --no-cache -t peridem-base-${UBUNTU_NAME} --build-arg UBUNTU_NAME=${UBUNTU_NAME} --build-arg TAG=latest -f Dockerfile-peridem-base-ubuntu-name-arg . 2>&1 | tee log-peridem-base-${UBUNTU_NAME}.txt
 ## OR USING CACHE
-## UBUNTU_NAME=focal && docker build --network=host  -t test-peridem-compilation-ubuntu-name-arg-${UBUNTU_NAME} --build-arg UBUNTU_NAME=${UBUNTU_NAME} -f Dockerfile-test-peridem-compilation-ubuntu-name-arg . 2>&1 | tee log-test-peridem-compilation-ubuntu-name-arg-${UBUNTU_NAME}.txt
+## UBUNTU_NAME=focal && docker build --network=host -t peridem-base-${UBUNTU_NAME} --build-arg UBUNTU_NAME=${UBUNTU_NAME} --build-arg TAG=latest -f Dockerfile-peridem-base-ubuntu-name-arg . 2>&1 | tee log-peridem-base-${UBUNTU_NAME}.txt
 ## Try above command with
 ## UBUNTU_NAME=bionic
 ## UBUNTU_NAME=focal

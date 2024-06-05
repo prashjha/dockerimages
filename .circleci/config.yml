@@ -18,13 +18,19 @@ commands:
         type: string
         default: focal
     steps:
+      - run:
+        name: greetings
+        command: |
+            UBUNTU_NAME=<<parameters.ubuntu_name>> 
+            echo "building using UBUNTU_NAME = ${UBUNTU_NAME}"
       - run: 
           name: build docker image
           command: |
             UBUNTU_NAME=<<parameters.ubuntu_name>> 
+            echo "building peridem-base-${UBUNTU_NAME}"
             docker build --network=host --no-cache \
               -t peridem-base-${UBUNTU_NAME} \
-              --build-arg UBUNTU_NAME=${UBUNTU_NAME} \
+              --build-arg UBUNTU_NAME=${UBUNTU_NAME} --build-arg TAG=latest \
               -f <<pipeline.parameters.peridem-base-docker-filename>> \
               .
       - run:
@@ -32,6 +38,7 @@ commands:
           command: |
             UBUNTU_NAME=<<parameters.ubuntu_name>> 
             docker login --username ${DOCKER_USER} --password ${DOCKER_PASS}
+            echo "pushing peridem-base-${UBUNTU_NAME}"
             docker tag peridem-base-${UBUNTU_NAME} prashjha/peridem-base-${UBUNTU_NAME}:latest
             docker push prashjha/peridem-base-${UBUNTU_NAME}:latest
 
@@ -43,17 +50,8 @@ jobs:
         - setup_remote_docker:
             reusable: true
             exclusive: true
-        - run:
-            name: Install bash
-            command: apk add --no-cache bash
-        - attach_workspace:
-            at: /root/repo/
         - docker_build:
             ubuntu_name: bionic
-        - persist_to_workspace:
-            root: /root/repo
-            paths:
-              - branch_cache
   peridem-base-focal:
       executor: compiler
       steps:
@@ -61,17 +59,8 @@ jobs:
         - setup_remote_docker:
             reusable: true
             exclusive: true
-        - run:
-            name: Install bash
-            command: apk add --no-cache bash
-        - attach_workspace:
-            at: /root/repo/
         - docker_build:
             ubuntu_name: focal
-        - persist_to_workspace:
-            root: /root/repo
-            paths:
-              - branch_cache
   peridem-base-jammy:
       executor: compiler
       steps:
@@ -79,17 +68,8 @@ jobs:
         - setup_remote_docker:
             reusable: true
             exclusive: true
-        - run:
-            name: Install bash
-            command: apk add --no-cache bash
-        - attach_workspace:
-            at: /root/repo/
         - docker_build:
             ubuntu_name: jammy
-        - persist_to_workspace:
-            root: /root/repo
-            paths:
-              - branch_cache
   peridem-base-noble:
       executor: compiler
       steps:
@@ -97,22 +77,13 @@ jobs:
         - setup_remote_docker:
             reusable: true
             exclusive: true
-        - run:
-            name: Install bash
-            command: apk add --no-cache bash
-        - attach_workspace:
-            at: /root/repo/
         - docker_build:
             ubuntu_name: noble
-        - persist_to_workspace:
-            root: /root/repo
-            paths:
-              - branch_cache
 workflows:
   version: 2
   build-images:
     jobs:
       - peridem-base-bionic
-      - peridem-base-focal
-      - peridem-base-jammy
-      - peridem-base-noble
+      #- peridem-base-focal
+      #- peridem-base-jammy
+      #- peridem-base-noble
