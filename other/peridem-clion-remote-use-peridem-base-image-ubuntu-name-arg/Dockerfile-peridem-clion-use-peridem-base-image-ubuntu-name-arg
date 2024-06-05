@@ -13,9 +13,9 @@ LABEL description="Docker image for clion remote development"
 ## 1. pull latest docker image
 ## UBUNTU_NAME=focal && docker pull prashjha/peridem-base-${UBUNTU_NAME}:latest
 ## 2. build command
-## UBUNTU_NAME=focal && docker build --no-cache -t peridem-clion-${UBUNTU_NAME} -f Dockerfile-peridem-clion-use-peridem-base-image-ubuntu-name-arg . 2>&1 | tee log-peridem-clion-use-peridem-base-image-ubuntu-name-arg-${UBUNTU_NAME}.txt
+## UBUNTU_NAME=focal && docker build --no-cache --build-arg UBUNTU_NAME=${UBUNTU_NAME} --build-arg TAG=latest -t peridem-clion-${UBUNTU_NAME} -f Dockerfile-peridem-clion-use-peridem-base-image-ubuntu-name-arg . 2>&1 | tee log-peridem-clion-use-peridem-base-image-ubuntu-name-arg-${UBUNTU_NAME}.txt
 ## OR USING CACHE
-## UBUNTU_NAME=focal && docker build -t peridem-clion-${UBUNTU_NAME} -f Dockerfile-peridem-clion-use-peridem-base-image-ubuntu-name-arg . 2>&1 | tee log-peridem-clion-use-peridem-base-image-ubuntu-name-arg-${UBUNTU_NAME}.txt
+## UBUNTU_NAME=focal && docker build --build-arg UBUNTU_NAME=${UBUNTU_NAME} --build-arg TAG=latest -t peridem-clion-${UBUNTU_NAME} -f Dockerfile-peridem-clion-use-peridem-base-image-ubuntu-name-arg . 2>&1 | tee log-peridem-clion-use-peridem-base-image-ubuntu-name-arg-${UBUNTU_NAME}.txt
 ## 3. run
 ## UBUNTU_NAME=focal && docker run -d --cap-add sys_ptrace -p127.0.0.1:2222:22 --name peridem-clion-remote-${UBUNTU_NAME} peridem-clion-${UBUNTU_NAME}
 ## 4. set ssh
@@ -48,7 +48,7 @@ RUN if id user >/dev/null 2>&1; then echo "User 'user' already exists"; else ech
 RUN apt-get update --fix-missing \
 &&  apt-get upgrade -y --force-yes \
 &&  DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes \
-    openssh-server rsync gcc-multilib libstdc++-8-dev \
+    openssh-server rsync gcc-multilib \
 &&  rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* \
 &&  apt-get autoremove -y \
 &&  apt-get autoclean -y 

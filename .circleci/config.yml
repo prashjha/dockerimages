@@ -84,6 +84,6 @@ workflows:
   build-images:
     jobs:
       - peridem-base-bionic
-      #- peridem-base-focal
-      #- peridem-base-jammy
-      #- peridem-base-noble
+      - peridem-base-focal
+      - peridem-base-jammy
+      - peridem-base-noble
