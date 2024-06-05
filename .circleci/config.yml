@@ -6,49 +6,35 @@ executors:
       - image: docker:17.06.0-ce-git
     working_directory: ~/repo
 
-jobs:
-  angio-base-bionic:
-      executor: compiler
-      steps:
-        - checkout
-        - setup_remote_docker:
-            reusable: true
-            exclusive: true
-        - run:
-            name: Install bash
-            command: apk add --no-cache bash
-        - attach_workspace:
-            at: /root/repo/
-        - run:
-            name: Build + deploy image
-            command: ./build-and-deploy-image angio-base-bionic
-            no_output_timeout: 30m
-        - persist_to_workspace:
-            root: /root/repo
-            paths:
-              - branch_cache
-      
-  angio-base-focal:
-      executor: compiler
-      steps:
-        - checkout
-        - setup_remote_docker:
-            reusable: true
-            exclusive: true
-        - run:
-            name: Install bash
-            command: apk add --no-cache bash
-        - attach_workspace:
-            at: /root/repo/
-        - run:
-            name: Build + deploy image
-            command: ./build-and-deploy-image angio-base-focal
-            no_output_timeout: 30m
-        - persist_to_workspace:
-            root: /root/repo
-            paths:
-              - branch_cache
-      
+parameters:
+  peridem-base-docker-filename:
+    type: string
+    default: peridem-base/Dockerfile-peridem-base-ubuntu-name-arg
+
+commands:
+  docker_build:
+    parameters:
+      ubuntu_name:
+        type: string
+        default: focal
+    steps:
+      - run: 
+          name: build docker image
+          command: |
+            UBUNTU_NAME=<<parameters.ubuntu_name>> 
+            docker build --network=host --no-cache \
+              -t peridem-base-${UBUNTU_NAME} \
+              --build-arg UBUNTU_NAME=${UBUNTU_NAME} \
+              -f <<pipeline.parameters.peridem-base-docker-filename>> \
+              .
+      - run:
+          name: deploy
+          command: |
+            docker login --username ${DOCKER_USER} --password ${DOCKER_PASS}
+            docker tag peridem-base-${UBUNTU_NAME} prashjha/peridem-base-${UBUNTU_NAME}:latest
+            docker push prashjha/peridem-base-${UBUNTU_NAME}:latest
+
+jobs: 
   peridem-base-bionic:
       executor: compiler
       steps:
@@ -61,15 +47,12 @@ jobs:
             command: apk add --no-cache bash
         - attach_workspace:
             at: /root/repo/
-        - run:
-            name: Build + deploy image
-            command: ./build-and-deploy-image peridem-base-bionic
-            no_output_timeout: 30m
+        - docker_build:
+            ubuntu_name: bionic
         - persist_to_workspace:
             root: /root/repo
             paths:
               - branch_cache
-      
   peridem-base-focal:
       executor: compiler
       steps:
@@ -82,20 +65,53 @@ jobs:
             command: apk add --no-cache bash
         - attach_workspace:
             at: /root/repo/
-        - run:
-            name: Build + deploy image
-            command: ./build-and-deploy-image peridem-base-focal
-            no_output_timeout: 30m
+        - docker_build:
+            ubuntu_name: focal
         - persist_to_workspace:
             root: /root/repo
             paths:
               - branch_cache
-      
+  peridem-base-jammy:
+      executor: compiler
+      steps:
+        - checkout
+        - setup_remote_docker:
+            reusable: true
+            exclusive: true
+        - run:
+            name: Install bash
+            command: apk add --no-cache bash
+        - attach_workspace:
+            at: /root/repo/
+        - docker_build:
+            ubuntu_name: jammy
+        - persist_to_workspace:
+            root: /root/repo
+            paths:
+              - branch_cache
+  peridem-base-noble:
+      executor: compiler
+      steps:
+        - checkout
+        - setup_remote_docker:
+            reusable: true
+            exclusive: true
+        - run:
+            name: Install bash
+            command: apk add --no-cache bash
+        - attach_workspace:
+            at: /root/repo/
+        - docker_build:
+            ubuntu_name: noble
+        - persist_to_workspace:
+            root: /root/repo
+            paths:
+              - branch_cache
 workflows:
   version: 2
   build-images:
     jobs:
-      - angio-base-bionic
-      - angio-base-focal
       - peridem-base-bionic
       - peridem-base-focal
+      - peridem-base-jammy
+      - peridem-base-noble

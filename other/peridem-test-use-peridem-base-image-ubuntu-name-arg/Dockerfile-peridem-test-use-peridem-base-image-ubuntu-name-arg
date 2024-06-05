@@ -1,0 +1,53 @@
+# -------------------------------------------
+# Copyright (c) 2021 - 2024 Prashant K. Jha
+# -------------------------------------------
+
+ARG UBUNTU_NAME=
+FROM prashjha/peridem-base-${UBUNTU_NAME}:latest
+
+## build command
+## UBUNTU_NAME=focal && docker build --network=host --no-cache  -t peridem-test-use-peridem-base-image-ubuntu-name-arg-${UBUNTU_NAME} --build-arg UBUNTU_NAME=${UBUNTU_NAME} -f Dockerfile-peridem-test-use-peridem-base-image-ubuntu-name-arg . 2>&1 | tee log-peridem-test-use-peridem-base-image-ubuntu-name-arg-${UBUNTU_NAME}.txt
+## OR USING CACHE
+## UBUNTU_NAME=focal && docker build --network=host  -t peridem-test-use-peridem-base-image-ubuntu-name-arg-${UBUNTU_NAME} --build-arg UBUNTU_NAME=${UBUNTU_NAME} -f Dockerfile-peridem-test-use-peridem-base-image-ubuntu-name-arg . 2>&1 | tee log-peridem-test-use-peridem-base-image-ubuntu-name-arg-${UBUNTU_NAME}.txt
+## Try above command with
+## UBUNTU_NAME=bionic
+## UBUNTU_NAME=focal
+## UBUNTU_NAME=jammy
+## UBUNTU_NAME=noble
+
+# Set metadata
+LABEL maintainer="Prashant K. Jha <pjha.sci@gmail.com>"
+LABEL description="Test peridem using pre-build docker image of ubuntu"
+
+# -----------------------
+# setup user (for mpi tests)
+# username - user
+# password - password
+# add only if the user does not exist
+# -----------------------
+RUN if id user >/dev/null 2>&1; then \
+        echo "User 'user' already exists"; \
+    else \
+        echo "User 'user' does not exist so creating user 'user'" && \
+        useradd -m user && \
+        yes password | passwd user && \
+        usermod -s /bin/bash user; \
+    fi
+    
+# -----------------------
+# build peridem
+# -----------------------
+RUN echo "change from root to 'user'" 
+
+USER user
+WORKDIR /home/user
+
+RUN echo "cat /lib_vars_paths.txt" && \
+    cat /lib_vars_paths.txt
+
+RUN echo "copy compile_peridem.sh file into container"
+COPY compile_peridem.sh ./compile_peridem.sh
+
+RUN echo "running compile_peridem.sh" && \
+    /bin/bash ./compile_peridem.sh
+

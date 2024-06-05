@@ -2,12 +2,9 @@
 
 [![CircleCI](https://circleci.com/gh/prashjha/dockerimages.svg?style=shield)](https://circleci.com/gh/prashjha/dockerimages)
 
-This repository is based on excellent automation of docker image creation in this repository: https://github.com/ataber/docker_images
 
 ## Docker images
 - `peridem-base-bionic`
 - `peridem-base-focal`
-- `angio-base-bionic`
-- `angio-base-focal`
-- `nlmech-base-bionic`
-- `nlmech-base-focal`
+- `peridem-base-jammy`
+- `peridem-base-noble`

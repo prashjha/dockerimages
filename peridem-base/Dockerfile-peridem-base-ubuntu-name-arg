@@ -1,0 +1,290 @@
+# -------------------------------------------
+# Copyright (c) 2021 - 2024 Prashant K. Jha
+# -------------------------------------------
+
+ARG UBUNTU_NAME=
+FROM ubuntu:${UBUNTU_NAME}
+
+## build command
+## UBUNTU_NAME=focal && docker build --network=host --no-cache  -t test-peridem-compilation-ubuntu-name-arg-${UBUNTU_NAME} --build-arg UBUNTU_NAME=${UBUNTU_NAME} -f Dockerfile-test-peridem-compilation-ubuntu-name-arg . 2>&1 | tee log-test-peridem-compilation-ubuntu-name-arg-${UBUNTU_NAME}.txt
+## OR USING CACHE
+## UBUNTU_NAME=focal && docker build --network=host  -t test-peridem-compilation-ubuntu-name-arg-${UBUNTU_NAME} --build-arg UBUNTU_NAME=${UBUNTU_NAME} -f Dockerfile-test-peridem-compilation-ubuntu-name-arg . 2>&1 | tee log-test-peridem-compilation-ubuntu-name-arg-${UBUNTU_NAME}.txt
+## Try above command with
+## UBUNTU_NAME=bionic
+## UBUNTU_NAME=focal
+## UBUNTU_NAME=jammy
+## UBUNTU_NAME=noble
+
+# Set metadata
+LABEL maintainer="Prashant K. Jha <pjha.sci@gmail.com>"
+LABEL description="Ubuntu image with pre-installed libraries for PeriDEM repository"
+
+# -----------------------
+# create environment file to store key directories
+# -----------------------
+RUN cd / && echo "pwd = $(pwd)" && \
+    echo UBUNTU_CODENAME="$(cat /etc/os-release | grep UBUNTU_CODENAME | cut -d = -f 2)" >> /lib_vars_paths.txt 
+
+RUN ls -a && \
+    echo "test if variables from file can be loaded" && \
+    . /lib_vars_paths.txt && \
+    echo "UBUNTU_CODENAME = ${UBUNTU_CODENAME}"
+
+# -----------------------
+# test if .dockerenv file exists
+# -----------------------
+RUN echo "listing all files in root directory" && \
+    ls -a / && \
+    echo " " && \
+    echo " " && \
+    echo "checking for /.dockerenv file" && \
+    if [ -f "/.dockerenv" ]; then \
+        echo ".dockerenv found"; \
+    else \
+        echo ".dockerenv not found" && \
+        #echo " " && \
+        #echo "creating .dockerenv file" && \
+        #touch /.dockerenv  && \
+        #echo "done creating .dockerenv file"; \
+        echo " "; \
+    fi
+
+# -----------------------
+# setup user (may need during mpi tests)
+# username - user
+# password - password
+# -----------------------
+RUN echo "setting up user 'user' that may be handy in future application of this docker container" && \
+    useradd -m user \
+    && yes password | passwd user && \
+    usermod -s /bin/bash user
+
+## to change to 'user' in running tests with this docker, include following in the dockerfile
+## USER user
+## WORKDIR /home/user
+
+# -----------------------
+# essentials
+# -----------------------
+# disable prompts during apt-get install
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN echo "installing essential libraries" && \
+    apt-get update --fix-missing && \
+    apt-get upgrade -y && \
+    apt-get install -y \
+    less ca-certificates gpg wget curl \
+    lzip bzip2 unzip \
+    software-properties-common ubuntu-dev-tools build-essential \
+    openssh-server rsync 
+
+# -----------------------
+# clean-up
+# -----------------------
+RUN echo "clean-up" && \
+    rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* && \
+    apt-get autoremove -y && \
+    apt-get autoclean -y 
+
+# -----------------------
+# cmake (manually install in older ubuntu, e.g., bionic)
+# -----------------------
+RUN echo "installing make/configure/cmake related libraries" && \
+    apt-get update --fix-missing && \
+    apt-get install -y \
+    m4 autoconf libtool pkg-config make gfortran \
+    lldb valgrind \
+    clang-format clang-tidy 
+
+RUN echo "installing cmake" && \
+    . /lib_vars_paths.txt && \
+    if [ "${UBUNTU_CODENAME}" = "focal" ] || [ "${UBUNTU_CODENAME}" = "jammy" ]  || [ "${UBUNTU_CODENAME}" = "noble" ]; then \
+        echo "apt-get cmake for UBUNTU_CODENAME = ${UBUNTU_CODENAME}" && \
+        apt-get install -y cmake && \
+        cmake --version; \
+    elif [ "${UBUNTU_CODENAME}" = "bionic" ]; then \
+        echo "add repo for apt-get install cmake for UBUNTU_CODENAME = ${UBUNTU_CODENAME}" && \
+        echo "purging existing cmake" && \
+        apt-get purge --auto-remove cmake && \
+        echo "add cmake repo" && \
+        wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null && \
+        apt-add-repository "deb https://apt.kitware.com/ubuntu/ ${UBUNTU_CODENAME} main" && \
+        echo "fix public key issue with kitware repo" && \
+        gpg --keyserver keyserver.ubuntu.com --recv-keys 6AF7F09730B3F0A4 && \
+        gpg --export --armor 6AF7F09730B3F0A4 | apt-key add - && \
+        apt-get update && \
+        echo "finally install cmake using apt-get" && \
+        apt-get update --fix-missing && \
+        apt-get install -y cmake && \
+        cmake --version; \
+    fi
+
+# -----------------------
+# mpi
+# -----------------------
+RUN echo "install openmpi libraries" && \
+    apt-get install -y libopenmpi-dev openmpi-bin 
+
+# -----------------------
+# git
+# -----------------------
+RUN echo "install and configure git" && \
+    apt-get install -y git && \
+    git config --global url."https://github.com/".insteadOf git@github.com: && \
+    git config --global url."https://".insteadOf git://
+
+# -----------------------
+# doxygen/code coverage
+# -----------------------
+RUN echo "doxygen and code coverage related libraries" && \
+    apt-get install -y \
+    doxygen doxygen-latex graphviz ghostscript \
+    rpm gcovr ruby-coveralls libproj-dev
+
+# -----------------------
+# python
+# -----------------------
+# first install dependencies for pillow library
+RUN echo "installing dependency for python libraries" && \
+    apt-get install -y libjpeg-dev zlib1g-dev && \
+    echo "installing python pip3" && \
+    apt-get install -y python3-pip && \
+    echo "install python libraries using pip" && \
+    . /lib_vars_paths.txt && \
+    if [ "${UBUNTU_CODENAME}" = "noble" ]; then \
+        pip3 install numpy pyvista pandas --break-system-packages; \
+    else \
+        pip3 install numpy pyvista pandas; \
+    fi
+
+# -----------------------
+# essential computational/hpc libraries
+# -----------------------
+RUN echo "installing essential computational/hpc libraries" && \
+    apt-get install -y \
+    libblas-dev liblapack-dev libmpfr-dev libgmp-dev \
+    libtbb-dev libasio-dev libglvnd-dev 
+
+# -----------------------
+# gmsh
+# -----------------------
+RUN echo "installing gmsh libraries" && \
+    apt-get install -y libgmsh-dev gmsh
+
+# -----------------------
+# flann
+# -----------------------
+RUN echo "installing flann library" && \
+    apt-get install -y libflann-dev
+
+# -----------------------
+# metis
+# -----------------------
+RUN echo "installing metis" && \
+    apt-get install -y libmetis-dev && \
+    echo "creating symlink of metis library" && \
+    ln -sf /usr/lib/x86_64-linux-gnu/libmetis.so /usr/lib/libmetis.so && \
+    echo "Display metis header and lib files" && \
+    ls /usr/include/metis* && \
+    ls /usr/lib/libmetis* && \
+    echo "adding metis paths to file" && \
+    echo METIS_LIB_DIR="/usr/lib" >> /lib_vars_paths.txt && \
+    echo METIS_INCLUDE_DIR="/usr/include" >> /lib_vars_paths.txt && \
+    cat /lib_vars_paths.txt 
+
+# -----------------------
+# yaml-cpp
+# -----------------------
+RUN echo "installing yaml-cpp" && \
+    apt-get install -y libyaml-cpp-dev
+
+# -----------------------
+# vtk (build in focal/bionic and apt-get in noble/jammy)
+# -----------------------
+RUN echo "installing vtk (dry-run)" && \
+    . /lib_vars_paths.txt && \
+    if [ "${UBUNTU_CODENAME}" = "jammy" ] || [ "${UBUNTU_CODENAME}" = "noble" ]; then \
+        echo "apt-get VTK for UBUNTU_CODENAME = ${UBUNTU_CODENAME}" && \
+        echo "apt-get install -y libvtk9-dev" \
+        ; \
+    elif [ "${UBUNTU_CODENAME}" = "focal" ] || [ "${UBUNTU_CODENAME}" = "bionic" ]; then \
+        echo "building VTK for UBUNTU_CODENAME = ${UBUNTU_CODENAME}" && \
+        echo "installing dependency first" && \
+        echo "apt-get install -y libgl1-mesa-dev" \
+        ; \
+    fi
+
+RUN echo "installing vtk" && \
+    . /lib_vars_paths.txt && \
+    if [ "${UBUNTU_CODENAME}" = "jammy" ] || [ "${UBUNTU_CODENAME}" = "noble" ]; then \
+        echo "apt-get VTK for UBUNTU_CODENAME = ${UBUNTU_CODENAME}" && \
+        apt-get install -y libvtk9-dev && \
+        echo "adding vtk paths to file" && \
+        echo VTK_LIB_CMAKE_DIR="/usr/lib/x86_64-linux-gnu/cmake/vtk-9.1" >> /lib_vars_paths.txt && \
+        echo VTK_LIB_DIR="/usr/lib/x86_64-linux-gnu" >> /lib_vars_paths.txt && \
+        echo VTK_INCLUDE_DIR="/usr/include/vtk-9.1" >> /lib_vars_paths.txt && \
+        echo "installing vtk finished"; \
+    elif [ "${UBUNTU_CODENAME}" = "focal" ] || [ "${UBUNTU_CODENAME}" = "bionic" ]; then \
+        echo "building VTK for UBUNTU_CODENAME = ${UBUNTU_CODENAME}" && \
+        echo "installing dependency first" && \
+        apt-get install -y libgl1-mesa-dev && \
+        echo "clone vtk" && \
+        VTK_MAJOR_VERSION=9 && \
+        VTK_MINOR_VERSION=3 && \
+        VTK_PATCH_VERSION=0 && \
+        VTK_VERSION=$VTK_MAJOR_VERSION.$VTK_MINOR_VERSION.$VTK_PATCH_VERSION && \
+        echo "VTK_VERSION = ${VTK_VERSION}" && \
+        VTK_INSTALL_PATH="/usr/local" && \
+        cd /tmp && \
+        git clone --recursive https://gitlab.kitware.com/vtk/vtk.git vtk-${VTK_VERSION} && \
+        cd vtk-${VTK_VERSION} && \
+        git checkout v${VTK_VERSION} && \
+        cd .. && \
+        mkdir -p vtk_build && \
+        cd vtk_build && \
+        echo "pwd = $(pwd)" && \
+        echo "cmake" && \
+        cmake -D CMAKE_BUILD_TYPE:STRING=Release \
+            -D CMAKE_INSTALL_PREFIX:STRING=${VTK_INSTALL_PATH} \
+            -D BUILD_SHARED_LIBS=ON \
+            -D BUILD_TESTING=OFF \
+            -D VTK_REQUIRED_OBJCXX_FLAGS='' \
+            -D HDF5_BUILD_FRAMEWORKS=OFF \
+            -D VTK_BUILD_DOCUMENTATION=OFF \
+            -D VTK_BUILD_EXAMPLES=OFF \
+            -D VTK_BUILD_SCALED_SOA_ARRAYS=OFF \
+            -D VTK_BUILD_SPHINX_DOCUMENTATION=OFF \
+            -D VTK_GROUP_ENABLE_MPI=NO \
+            -D VTK_GROUP_ENABLE_Qt=DONT_WANT \
+            -D VTK_GROUP_ENABLE_Rendering=NO \
+            -D VTK_GROUP_ENABLE_Views=NO \
+            -D VTK_GROUP_ENABLE_Web=NO \
+            -D VTK_Group_MPI=ON \
+            -D VTK_USE_MPI=OFF \
+            -D VTK_WRAP_PYTHON=OFF \
+            ../vtk-${VTK_VERSION} && \
+        make -j $(cat /proc/cpuinfo | grep processor | wc -l) && \
+        make install && \
+        cd .. && \
+        rm -rf vtk-${VTK_VERSION} && \
+        rm -rf vtk_build && \
+        echo "adding vtk paths to file" && \
+        echo VTK_LIB_CMAKE_DIR="/usr/local/lib/cmake/vtk-${VTK_MAJOR_VERSION}.${VTK_MINOR_VERSION}" >> /lib_vars_paths.txt && \
+        echo VTK_LIB_DIR="/usr/local/lib" >> /lib_vars_paths.txt && \
+        echo VTK_INCLUDE_DIR="/usr/local/include/vtk-${VTK_MAJOR_VERSION}.${VTK_MINOR_VERSION}" >> /lib_vars_paths.txt && \
+        echo "building vtk finished"; \
+    fi
+
+# -----------------------
+# clean-up
+# -----------------------
+RUN echo "clean-up" && \
+    rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* && \
+    apt-get autoremove -y && \
+    apt-get autoclean -y 
+    
+# -----------------------
+# finalize
+# -----------------------
+RUN echo "cd to root directory" && \
+    cd / && echo "pwd = $(pwd)"
