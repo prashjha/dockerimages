@@ -84,7 +84,21 @@ RUN echo "installing essential libraries" && \
 RUN echo "clean-up" && \
     rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* && \
     apt-get autoremove -y && \
-    apt-get autoclean -y 
+    apt-get autoclean -y
+
+# -----------------------
+# gcc (need gcc 13 or above)
+# ----------------------- 
+RUN echo "upgrading gcc" && \
+    . /lib_vars_paths.txt && \
+    if [ "${UBUNTU_CODENAME}" = "focal" ] || [ "${UBUNTU_CODENAME}" = "jammy" ]  || [ "${UBUNTU_CODENAME}" = "bionic" ]; then \
+        echo "upgrade gcc for UBUNTU_CODENAME = ${UBUNTU_CODENAME}" && \
+        add-apt-repository ppa:ubuntu-toolchain-r/test && \
+        apt update && \
+        apt install gcc-13 g++-13 g++-13-multilib gcc-13-multilib libstdc++-13-dev -y && \
+        update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 100 --slave /usr/bin/g++ g++ /usr/bin/g++-13 && \
+        gcc --version; \
+    fi
 
 # -----------------------
 # cmake (manually install in older ubuntu, e.g., bionic)
